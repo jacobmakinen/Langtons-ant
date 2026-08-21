@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -39,8 +38,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -53,10 +50,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import com.example.langtonsant.ui.theme.LangtonsAntTheme
 import java.lang.Thread.sleep
 import kotlin.concurrent.thread
+import kotlin.random.Random
 import kotlin.text.iterator
 
 class MainActivity : ComponentActivity() {
@@ -287,6 +284,17 @@ fun getPresets(): Array<Preset>{
                 Color(0xFF024F3F),
                 Color(0xFF8CD3FA),
             )
+        ),
+        Preset(
+            "Spiral",
+            "UCCCU",
+            listOf(
+                Color.Black,
+                Color(0xFF8CD3FA),
+                Color(0xFF1A235E),
+                Color(0xFFC70734),
+                Color(0xFFB39DDB)
+            )
         )
     )
 }
@@ -332,6 +340,29 @@ fun InputRules(game: LangtonsAnt) {
                 }
             }
         )
+        RandomRulesButton(game)
+    }
+}
+
+@Composable
+fun RandomRulesButton(game: LangtonsAnt) {
+    val rules = arrayOf("L", "R", "C", "U")
+    IconButton(
+        modifier = Modifier
+            .size(60.dp),
+        onClick = {
+            game.rules.clear()
+            val nRules = Random.nextInt(0, 17)
+            for (i in 0 until nRules) {
+                game.rules.add(rules.random())
+            }
+        }
+    ) {
+        Icon(
+            painterResource(R.drawable.random),
+            null,
+            tint = Color.White
+        )
     }
 }
 
@@ -359,7 +390,7 @@ fun SelectedColors(game: LangtonsAnt, selectedColors: SnapshotStateList<Color>) 
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start
         ) {
-            for (i in 0 until selectedColors.size) {
+            for (i in selectedColors.indices) {
                 item {
                     Canvas(
                         Modifier
@@ -368,7 +399,6 @@ fun SelectedColors(game: LangtonsAnt, selectedColors: SnapshotStateList<Color>) 
                             .border(0.dp, Color.White)
                             .clickable {
                                 game.rulesColors.removeAt(i)
-//                                selectedColors.removeAt(i)
                             }
                     ) {
                         try {
@@ -379,12 +409,12 @@ fun SelectedColors(game: LangtonsAnt, selectedColors: SnapshotStateList<Color>) 
             }
         }
 
-        RandomButton(game)
+        RandomColorButton(game)
     }
 }
 
 @Composable
-fun RandomButton(game: LangtonsAnt) {
+fun RandomColorButton(game: LangtonsAnt) {
     val selectableColors = arrayOf(
         Color.White,
         Color(0xFF918c8c),
@@ -412,6 +442,8 @@ fun RandomButton(game: LangtonsAnt) {
             selectableColors.shuffle()
             game.rulesColors.clear()
             game.rulesColors.add(Color.Black)
+            // size - 1 as black is already added
+            // Should change to randomise background
             for (i in 0 until game.rules.size - 1) {
                 game.rulesColors.add(selectableColors[i])
             }
