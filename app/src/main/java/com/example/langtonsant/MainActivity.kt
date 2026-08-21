@@ -74,11 +74,11 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LangtonsAntGame() {
-    var playing by remember { mutableStateOf(false) }
+    val playing = remember { mutableStateOf(false) }
     val height = 1050
     val width = 550
-    var limit by remember { mutableStateOf(true) } // Speeds up when false
-    var fullUnlimit by remember { mutableStateOf(false) } // When true -> stops limit reactivating
+    val limit = remember { mutableStateOf(true) } // Speeds up when false
+    val fullUnlimit = remember { mutableStateOf(false) } // When true -> stops limit reactivating
 
     val game = remember { LangtonsAnt(height, width) }
 
@@ -91,101 +91,30 @@ fun LangtonsAntGame() {
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(30.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            // Play pause button
-            IconButton(
-                onClick = {
-                    if (game.rules.isNotEmpty() && game.rulesColors.size == game.rules.size) {
-                        game.clearGameBoard()
-                        limit = true
-                        fullUnlimit = false
-                        playing = !playing
-                    }
-                },
-            ) {
-                Icon(
-                    painterResource(
-                        if (!playing) {
-                            R.drawable.play
-                        } else {
-                            R.drawable.pause
-                        }
-                    ),
-                    null,
-                    tint = Color.White
-                )
-            }
+        ControlButtonRow(playing, limit, fullUnlimit, game)
 
-            // Speed limit button
-            if (playing) {
-                IconButton(
-                    onClick = {
-                        limit = !limit
-                    }
-                ) {
-                    Icon(
-                        painterResource(
-                            if (limit) {
-                                R.drawable.single_arrow_down
-                            } else {
-                                R.drawable.single_arrow_up
-                            }
-                        ),
-                        null,
-                        tint = Color.White
-                    )
-                }
-            }
-
-            if (!limit) {
-                IconButton(
-                    onClick = {
-                        fullUnlimit = !fullUnlimit
-                    }
-                ) {
-                    Icon(
-                        painterResource(
-                            if (fullUnlimit) {
-                                R.drawable.speed
-                            } else {
-                                R.drawable.slow
-                            }
-                        ),
-                        null,
-                        tint = Color.White
-                    )
-                }
-            }
-        }
-
-        if (!playing) {
+        if (!playing.value) {
             GameMenu(game)
         } else {
             GameCanvas(height, width, game)
         }
 
         // Ant looper
-        LaunchedEffect(playing) {
-            if (!playing) return@LaunchedEffect
+        LaunchedEffect(playing.value) {
+            if (!playing.value) return@LaunchedEffect
             var unlimitedLoops = 0
             thread {
-                while (playing) {
+                while (playing.value) {
                     game.moveAnt()
-                    if (limit && game.iterations > 1500000) {
-                        sleep(0, 200)
-                    } else if (limit) {
-                        sleep(0, 100)
-                    } else if (game.iterations > 200000 && unlimitedLoops > 100000 && !fullUnlimit) {
-                        limit = true
-                        unlimitedLoops = 0
-                    } else {
-                        unlimitedLoops++
+
+                    when {
+                        limit.value && game.iterations > 1500000 -> sleep(0, 200)
+                        limit.value -> sleep(0, 100)
+                        game.iterations > 200000 && unlimitedLoops > 100000 && !fullUnlimit.value -> {
+                            limit.value = true
+                            unlimitedLoops = 0
+                        }
+                        else -> unlimitedLoops ++
                     }
                 }
             }
@@ -201,7 +130,7 @@ fun GameCanvas(height: Int, width: Int, game: LangtonsAnt) {
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        // Needed for game updates
+        // Needed for recompositions
         val currentTick = game.iterations
 
         for (y in 0 until height) {
@@ -372,12 +301,11 @@ fun InputRules(game: LangtonsAnt) {
         )
     }
 
+    // Update the rules text if a preset is used
     key(game.rules) {
-        inputTextState = game.rules
-            .toList()
-            .toString()
-            .removePrefix("[")
-            .removeSuffix("]")
+        if (!equalRules(game.rules.toList(), inputTextState.toList())) {
+            inputTextState = game.rules.toList().toString().removePrefix("[").removeSuffix("]")
+        }
     }
 
     Row(
@@ -398,13 +326,19 @@ fun InputRules(game: LangtonsAnt) {
                 inputTextState = input
                 game.rules.clear()
                 for (char in input) {
-                    if (char == 'R' || char == 'L') {
+                    if (char == 'R' || char == 'L' || char == 'C' || char == 'U') {
                         game.rules.add(char.toString())
                     }
                 }
             }
         )
     }
+}
+
+fun equalRules(rule1: List<String>, rule2: List<Char>): Boolean {
+    val filtered1 = rule1.filter { it != " " && it != "," }
+    val filtered2 = rule2.filter { it != ' ' && it != ',' }
+    return filtered1.toString() == filtered2.toString()
 }
 
 @Composable

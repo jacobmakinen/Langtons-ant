@@ -36,8 +36,8 @@ class LangtonsAnt(
     }
 
     fun clearGameBoard() {
-        for (i in 0 until gameBoard.size) {
-            for (j in 0 until gameBoard[i].size) {
+        for (i in gameBoard.indices) {
+            for (j in gameBoard[i].indices) {
                 gameBoard[i][j] = Color.Black
             }
         }
@@ -83,8 +83,8 @@ class LangtonsAnt(
 
     private fun getChangedSquareColor(): Color {
         val color = gameBoard[ant.y][ant.x]
-        for (i in 0 until rulesColors.size) {
-            if (rulesColors[i] == color) {
+        for ((i, element) in rulesColors.withIndex()) {
+            if (element == color) {
                 return if (i + 1 != rulesColors.size) {
                     rulesColors[i + 1]
                 } else {
@@ -99,25 +99,44 @@ class LangtonsAnt(
     private fun rotate() {
         val color = gameBoard[ant.y][ant.x]
 
-        for (i in 0 until rulesColors.size) {
-            if (rulesColors[i] == color) {
+        for ((i, element) in rulesColors.withIndex()) {
+            if (element == color) {
                 val rule = rules[i]
-                if (rule.uppercase() == "L") {
-                    when (ant.direction) {
-                        Direction.UP -> ant.direction = Direction.LEFT
-                        Direction.LEFT -> ant.direction = Direction.DOWN
-                        Direction.DOWN -> ant.direction = Direction.RIGHT
-                        Direction.RIGHT -> ant.direction = Direction.UP
-                    }
-                } else {
-                    when (ant.direction) {
-                        Direction.UP -> ant.direction = Direction.RIGHT
-                        Direction.RIGHT -> ant.direction = Direction.DOWN
-                        Direction.DOWN -> ant.direction = Direction.LEFT
-                        Direction.LEFT -> ant.direction = Direction.UP
-                    }
+
+                // Omitted "C" as it doesn't change direction
+                when (rule.uppercase()) {
+                    "L" -> rotateLeft(ant)
+                    "R" -> rotateRight(ant)
+                    "U" -> rotateUTurn(ant)
                 }
             }
+        }
+    }
+
+    private fun rotateUTurn(ant: Ant) {
+        when (ant.direction) {
+            Direction.UP -> ant.direction = Direction.DOWN
+            Direction.LEFT -> ant.direction = Direction.RIGHT
+            Direction.DOWN -> ant.direction = Direction.UP
+            Direction.RIGHT -> ant.direction = Direction.LEFT
+        }
+    }
+
+    private fun rotateLeft(ant: Ant) {
+        when (ant.direction) {
+            Direction.UP -> ant.direction = Direction.LEFT
+            Direction.LEFT -> ant.direction = Direction.DOWN
+            Direction.DOWN -> ant.direction = Direction.RIGHT
+            Direction.RIGHT -> ant.direction = Direction.UP
+        }
+    }
+
+    private fun rotateRight(ant: Ant) {
+        when (ant.direction) {
+            Direction.UP -> ant.direction = Direction.RIGHT
+            Direction.RIGHT -> ant.direction = Direction.DOWN
+            Direction.DOWN -> ant.direction = Direction.LEFT
+            Direction.LEFT -> ant.direction = Direction.UP
         }
     }
 }
